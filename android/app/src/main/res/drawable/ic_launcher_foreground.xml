@@ -1,0 +1,12 @@
+<!-- res/drawable/ic_launcher_foreground.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Example shape: a simple star icon -->
+    <path
+        android:fillColor="#FFCC00"
+        android:pathData="M54,10 L66,41 L100,41 L72,59 L84,90 L54,71 L24,90 L36,59 L8,41 L42,41 Z"/>
+</vector>
