@@ -26,12 +26,21 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Your reason for accessing Health data to share step count or activity data.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Your reason for accessing Health data to update or monitor your activity in real-time.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app requires access to the local network for debugging purposes.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

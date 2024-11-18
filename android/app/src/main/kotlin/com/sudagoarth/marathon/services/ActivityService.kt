@@ -1,93 +1,101 @@
 package com.sudagoarth.marathon.services
 
-import com.sudagoarth.marathon.R
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
-import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import com.sudagoarth.marathon.GoogleFitManager
+import com.sudagoarth.marathon.R
+import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 
 class ActivityService : Service() {
 
+    private lateinit var googleFitManager: GoogleFitManager
+    private val handler = Handler()
+    private val updateInterval = TimeUnit.MINUTES.toMillis(10) // Update every 10 minutes
     private val CHANNEL_ID = "MarathonChannel"
     private val NOTIFICATION_ID = 1
 
     override fun onCreate() {
         super.onCreate()
+        googleFitManager = GoogleFitManager(this)
+
+        // Create the notification channel
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification("Starting marathon..."))
+
+        // Start the service in the foreground with an initial notification
+        startForeground(NOTIFICATION_ID, createNotification("Initializing marathon tracking...", 0.0, "0"))
+
+        // Start periodic updates
+        startPeriodicStepUpdates()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            "START" -> startLiveActivity()
-            "UPDATE" -> updateLiveActivity()
-            "STOP" -> stopLiveActivity()
-        }
-        return START_STICKY
+    /// Starts periodic updates to fetch and update step count data every 10 minutes.
+    private fun startPeriodicStepUpdates() {
+        handler.post(object : Runnable {
+            override fun run() {
+                // Fetch step count from Google Fit
+                googleFitManager.fetchTodaySteps { steps ->
+                    if (steps != null) {
+                        updateLiveActivity(steps)
+                    }
+                }
+                handler.postDelayed(this, updateInterval)
+            }
+        })
     }
 
-    private fun startLiveActivity() {
-        updateNotification("Started marathon for John Doe", 5.0, "12:45 PM")
+    /// Updates the notification with the latest step count and distance.
+    private fun updateLiveActivity(steps: Int) {
+        val distanceKm = (steps / 1300.0).roundToInt() / 1000.0 // Estimate distance based on steps
+        updateNotification("Marathon in progress...", distanceKm, steps.toString())
     }
 
-    private fun updateLiveActivity() {
-        updateNotification("Runner Update", 21.1, "1:15 PM")
-    }
-
-    private fun stopLiveActivity() {
-        updateNotification("Stopped marathon for John Doe", 42.2, "Finished")
-        stopSelf()
-    }
-
-    private fun createNotification(title: String): Notification {
-        val customView = RemoteViews(packageName, R.layout.custom_notification_layout)
-        customView.setTextViewText(R.id.runner_name, "Runner: John Doe")
-        customView.setTextViewText(R.id.runner_position, "Position: 0.0 km")
-        customView.setTextViewText(R.id.runner_finish_time, "Estimated Finish: --")
-
+    /// Creates a notification for the foreground service.
+    private fun createNotification(title: String, distanceKm: Double, steps: String): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
-            .setCustomContentView(customView)  // For collapsed view
-            .setCustomBigContentView(customView)  // For expanded view
-            .setPriority(NotificationCompat.PRIORITY_HIGH)  // Ensures visibility
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Shows on lock screen
+            .setContentText("Distance: $distanceKm km | Steps: $steps")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
     }
 
-    private fun updateNotification(title: String, position: Double, finishTime: String) {
-        val customView = RemoteViews(packageName, R.layout.custom_notification_layout)
-        customView.setTextViewText(R.id.runner_name, "Runner: John Doe")
-        customView.setTextViewText(R.id.runner_position, "Position: $position km")
-        customView.setTextViewText(R.id.runner_finish_time, "Estimated Finish: $finishTime")
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setCustomContentView(customView)
-            .setCustomBigContentView(customView)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
-
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+    /// Updates the live notification with the latest data.
+    private fun updateNotification(title: String, distanceKm: Double, steps: String) {
+        val notification = createNotification(title, distanceKm, steps)
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
+    /// Creates a notification channel required for Android 8.0+.
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
                 CHANNEL_ID,
-                "Marathon Channel",
+                "Marathon Tracking Channel",
                 NotificationManager.IMPORTANCE_HIGH
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacksAndMessages(null) // Stop periodic updates
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

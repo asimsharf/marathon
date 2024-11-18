@@ -34,8 +34,6 @@ class ChannelHandler {
             activityService.updateLiveActivity(result: result)
         case "stopLiveActivity":
             activityService.stopLiveActivity(result: result)
-        case "showAll":
-            activityService.showAllLiveActivity(result: result)
         default:
             result(FlutterMethodNotImplemented)
         }

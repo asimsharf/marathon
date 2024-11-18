@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -20,6 +20,7 @@
 		C66C5E622CEA5AC7001E9E39 /* ActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66C5E612CEA5AC7001E9E39 /* ActivityService.swift */; };
 		C66C5E642CEA5AD1001E9E39 /* ChannelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66C5E632CEA5AD1001E9E39 /* ChannelHandler.swift */; };
 		C6B2ED4A2CE8C37800AD9E60 /* MarathonAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B2ED492CE8C37800AD9E60 /* MarathonAttributes.swift */; };
+		C6D121F52CEB9B750034D2F9 /* HealthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6D121F42CEB9B750034D2F9 /* HealthManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +86,8 @@
 		C6B2ED492CE8C37800AD9E60 /* MarathonAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarathonAttributes.swift; sourceTree = "<group>"; };
 		C6B2ED512CE8C74000AD9E60 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		C6B2ED532CE8C74000AD9E60 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		C6D121D32CEB998D0034D2F9 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		C6D121F42CEB9B750034D2F9 /* HealthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -165,6 +168,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				C6D121D32CEB998D0034D2F9 /* Runner.entitlements */,
 				C66C5E662CEA5B17001E9E39 /* services */,
 				C66C5E652CEA5B05001E9E39 /* handlers */,
 				C6B2ED482CE8C37400AD9E60 /* models */,
@@ -191,6 +195,7 @@
 		C66C5E662CEA5B17001E9E39 /* services */ = {
 			isa = PBXGroup;
 			children = (
+				C6D121F42CEB9B750034D2F9 /* HealthManager.swift */,
 				C66C5E612CEA5AC7001E9E39 /* ActivityService.swift */,
 			);
 			path = services;
@@ -397,6 +402,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C6B2ED4A2CE8C37800AD9E60 /* MarathonAttributes.swift in Sources */,
+				C6D121F52CEB9B750034D2F9 /* HealthManager.swift in Sources */,
 				C66C5E642CEA5AD1001E9E39 /* ChannelHandler.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				C66C5E622CEA5AC7001E9E39 /* ActivityService.swift in Sources */,
@@ -505,6 +511,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = X9YMNND976;
 				ENABLE_BITCODE = NO;
@@ -688,6 +695,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = X9YMNND976;
 				ENABLE_BITCODE = NO;
@@ -712,6 +720,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = X9YMNND976;
 				ENABLE_BITCODE = NO;

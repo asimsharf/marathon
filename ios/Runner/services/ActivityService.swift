@@ -1,85 +1,104 @@
-//
-//  ActivityService.swift
-//  Runner
-//
-//  Created by asimsharf on 17/11/2024.
-//
-
 import ActivityKit
 import Foundation
+import HealthKit
 
 @available(iOS 16.1, *)
 class ActivityService {
     
-    // Current marathon activity instance
+    static let shared = ActivityService() // Singleton instance
     private var marathonActivity: Activity<MarathonAttributes>?
+    private let healthManager = HealthManager()
+    private var updateTimer: Timer?
     
-    /// Starts a new Live Activity with initial parameters.
+    /// Starts a new Live Activity using step data from HealthKit.
     func startLiveActivity(result: @escaping FlutterResult) {
-        guard marathonActivity == nil else {
-            result(FlutterError(code: "START_ERROR", message: "A marathon Live Activity is already running", details: nil))
-            return
-        }
-        
-        let futureFinishTime = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
-        let initialContentState = createContentState(
-            runnerName: "John Doe",
-            currentPosition: 5.0,
-            estimatedFinishTime: futureFinishTime
-        )
-        
-        let activityAttributes = MarathonAttributes(runnerID: "runner_123")
-        
-        do {
-            marathonActivity = try Activity.request(
-                attributes: activityAttributes,
-                contentState: initialContentState
-            )
-            result("Started marathon Live Activity with ID: \(marathonActivity?.id ?? "N/A")")
-        } catch let error {
-            result(FlutterError(code: "START_ERROR", message: "Error starting marathon Live Activity", details: error.localizedDescription))
-        }
-    }
-    
-    /// Updates the existing Live Activity with new data.
-    func updateLiveActivity(result: @escaping FlutterResult) {
-        guard let marathonActivity = marathonActivity else {
-            result(FlutterError(code: "UPDATE_ERROR", message: "No active marathon Live Activity to update", details: nil))
-            return
-        }
-        
-        let updatedContentState = createContentState(
-            runnerName: "John Doe",
-            currentPosition: 21.1,
-            estimatedFinishTime: Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
-        )
-        
-        let alertConfiguration = AlertConfiguration(
-            title: "Marathon Update",
-            body: "The runner is halfway through the marathon!",
-            sound: .default
-        )
-        
-        Task {
-            do {
-                try await marathonActivity.update(using: updatedContentState, alertConfiguration: alertConfiguration)
-                result("Updated marathon Live Activity")
-            } catch {
-                result(FlutterError(code: "UPDATE_ERROR", message: "Failed to update marathon Live Activity", details: error.localizedDescription))
+        // Request HealthKit authorization
+        healthManager.requestAuthorization { success, error in
+            guard success else {
+                result(FlutterError(code: "AUTH_ERROR", message: "HealthKit authorization failed", details: error?.localizedDescription))
+                return
+            }
+            
+            // Enable background delivery and start observing step changes
+            self.healthManager.enableBackgroundDeliveryForSteps()
+            self.healthManager.startObservingStepChanges()
+            
+            // Fetch initial step count
+            self.healthManager.fetchTodaySteps { steps in
+                guard let steps = steps else {
+                    result(FlutterError(code: "DATA_ERROR", message: "Failed to fetch HealthKit data", details: nil))
+                    return
+                }
+                
+                let currentPosition = steps / 1300.0 // Approximate steps-to-km conversion
+                let futureFinishTime = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
+                
+                let initialContentState = MarathonAttributes.ContentState(
+                    runnerName: "John Doe",
+                    currentPosition: currentPosition,
+                    totalDistance: 42.2,
+                    estimatedFinishTime: futureFinishTime
+                )
+                
+                let activityAttributes = MarathonAttributes(runnerID: "runner_123")
+                
+                do {
+                    self.marathonActivity = try Activity.request(
+                        attributes: activityAttributes,
+                        contentState: initialContentState
+                    )
+                    result("Started marathon Live Activity with ID: \(self.marathonActivity?.id ?? "N/A")")
+                    self.startPeriodicUpdates() // Start periodic updates
+                } catch let error {
+                    result(FlutterError(code: "START_ERROR", message: "Error starting marathon Live Activity", details: error.localizedDescription))
+                }
             }
         }
     }
     
-    /// Ends the current Live Activity with final data.
+    /// Updates the existing Live Activity with new data.
+    func updateLiveActivityWithSteps(steps: Double) {
+        guard let marathonActivity = marathonActivity else { return }
+        
+        let updatedContentState = MarathonAttributes.ContentState(
+            runnerName: "John Doe",
+            currentPosition: steps / 1300.0, // Approximate conversion
+            totalDistance: 42.2,
+            estimatedFinishTime: Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
+        )
+        
+        Task {
+            do {
+                try await marathonActivity.update(using: updatedContentState)
+                print("Updated marathon Live Activity with steps: \(steps)")
+            } catch {
+                print("Failed to update marathon Live Activity")
+            }
+        }
+    }
+    
+    /// Starts periodic updates every 10 minutes when the app is in the foreground.
+    private func startPeriodicUpdates() {
+        updateTimer?.invalidate() // Invalidate any existing timer
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
+            self?.healthManager.fetchTodaySteps { steps in
+                guard let steps = steps else { return }
+                self?.updateLiveActivityWithSteps(steps: steps)
+            }
+        }
+    }
+    
+    /// Stops the Live Activity and cancels periodic updates.
     func stopLiveActivity(result: @escaping FlutterResult) {
         guard let marathonActivity = marathonActivity else {
             result(FlutterError(code: "STOP_ERROR", message: "No active marathon Live Activity to stop", details: nil))
             return
         }
         
-        let finalContentState = createContentState(
+        let finalContentState = MarathonAttributes.ContentState(
             runnerName: "John Doe",
-            currentPosition: 42.2, // End position for completion
+            currentPosition: 42.2,
+            totalDistance: 42.2,
             estimatedFinishTime: Date()
         )
         
@@ -87,38 +106,12 @@ class ActivityService {
             do {
                 try await marathonActivity.end(using: finalContentState, dismissalPolicy: .default)
                 result("Stopped marathon Live Activity")
-                self.marathonActivity = nil // Clear the activity
+                self.marathonActivity = nil
+                updateTimer?.invalidate() // Stop the timer
+                updateTimer = nil
             } catch {
                 result(FlutterError(code: "STOP_ERROR", message: "Failed to stop marathon Live Activity", details: error.localizedDescription))
             }
         }
-    }
-    
-    /// Displays all active Live Activities.
-    func showAllLiveActivity(result: @escaping FlutterResult) {
-        Task {
-            var activityDetails: [String] = []
-            for await activity in Activity<MarathonAttributes>.activityUpdates {
-                activityDetails.append("Marathon details: \(activity.attributes)")
-            }
-            result(activityDetails.joined(separator: "\n"))
-        }
-    }
-    
-    // MARK: - Private Helper Methods
-    
-    /// Creates a new content state for the activity.
-    private func createContentState(runnerName: String, currentPosition: Double, estimatedFinishTime: Date) -> MarathonAttributes.ContentState {
-        return MarathonAttributes.ContentState(
-            runnerName: runnerName,
-            currentPosition: currentPosition,
-            totalDistance: 42.2,
-            estimatedFinishTime: estimatedFinishTime
-        )
-    }
-    
-    /// Returns true if there is an active marathon Live Activity.
-    private func isMarathonActivityActive() -> Bool {
-        return marathonActivity != nil
     }
 }
