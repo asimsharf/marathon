@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Handler
@@ -72,7 +71,7 @@ class ActivityService : Service() {
     /// Updates the live notification with the latest data.
     private fun updateNotification(title: String, distanceKm: Double, steps: String) {
         val notification = createNotification(title, distanceKm, steps)
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
