@@ -30,8 +30,6 @@ class ChannelHandler {
         switch call.method {
         case "startLiveActivity":
             activityService.startLiveActivity(result: result)
-        case "updateLiveActivity":
-            activityService.updateLiveActivity(result: result)
         case "stopLiveActivity":
             activityService.stopLiveActivity(result: result)
         default:
