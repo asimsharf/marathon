@@ -51,9 +51,10 @@ class HealthManager {
                 guard let steps = steps else { return }
                 print("Steps updated: \(steps)")
                 
-                // Call an update function in ActivityService if necessary
-                ActivityService.shared.updateLiveActivityWithSteps(steps: steps)
-                
+                // Conditionally call ActivityService if the iOS version is 16.1 or newer
+                 if #available(iOS 16.1, *) {
+                     ActivityService.shared.updateLiveActivityWithSteps(steps: steps)
+                 }
                 completionHandler()
             }
         }
